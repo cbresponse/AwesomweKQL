@@ -1,0 +1,19 @@
+let C2Hunt = (externaldata(entry: string,values:dynamic) [@"https://threatview.io/Downloads/High-Confidence-CobaltStrike-C2%20-Feeds.txt"]
+with (format="txt",ignoreFirstRecord=true))
+| where entry !startswith "#"
+| extend data = parse_csv(entry)
+| extend C2IP = tostring(data[0])
+| extend Date = toint(data[1])
+| extend C2Host = tostring(data[2])
+| extend C2Protocol = tostring(data[3])
+| extend C2Beacon = tostring(data[4])
+| extend Config = tostring(data[5])
+| extend Comment = tostring(data[6])
+| project-away ['data']
+| where C2IP != "" ;
+C2Hunt
+| join (DeviceNetworkEvents
+//| where ActionType =="ConnectionSuccess"
+) 
+on $left.C2IP == $right.RemoteIP
+| project Timestamp, C2IP, RemoteIP, DeviceName, RemoteUrl, InitiatingProcessFileName, C2Beacon, C2Host, ActionType
